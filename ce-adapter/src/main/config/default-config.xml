@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+  Copyright (c) 2015 Huawei Technologies Co. Ltd. and others. All rights reserved.
+  This program and the accompanying materials are made available under the
+  terms of the Eclipse Public License v1.0 which accompanies this distribution,
+  and is available at http://www.eclipse.org/legal/epl-v10.html
+-->
+
+<snapshot>
+    <configuration>
+        <data xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+            <modules xmlns="urn:opendaylight:params:xml:ns:yang:controller:config">
+                <module>
+                    <type xmlns:ce-adapter="urn:opendaylight:params:xml:ns:yang:controller:config:fabric:vlan:adapter:ce">
+                        ce-adapter:vlan-fabric-ce-adapter
+                    </type>
+                    <name>vlan-fabric-ce-adapter</name>
+
+                    <rpc-registry>
+                        <type xmlns:binding="urn:opendaylight:params:xml:ns:yang:controller:md:sal:binding">binding:binding-rpc-registry</type>
+                        <name>binding-rpc-broker</name>
+                    </rpc-registry>
+
+                    <data-broker>
+                      <type xmlns:binding="urn:opendaylight:params:xml:ns:yang:controller:md:sal:binding">binding:binding-async-data-broker</type>
+                      <name>binding-data-broker</name>
+                    </data-broker>
+
+                </module>
+
+                <module>
+                    <type xmlns:ce-adapter="urn:opendaylight:params:xml:ns:yang:controller:config:fabric:vlan:adapter:ce">
+                        ce-adapter:ce-connector
+                    </type>
+                    <name>ce-spine</name>
+
+                    <rpc-registry>
+                        <type xmlns:binding="urn:opendaylight:params:xml:ns:yang:controller:md:sal:binding">binding:binding-rpc-registry</type>
+                        <name>binding-rpc-broker</name>
+                    </rpc-registry>
+
+                    <data-broker>
+                      <type xmlns:binding="urn:opendaylight:params:xml:ns:yang:controller:md:sal:binding">binding:binding-async-data-broker</type>
+                      <name>binding-data-broker</name>
+                    </data-broker>
+
+                    <connection-info>
+                        <management-ip>192.168.1.141</management-ip>
+                        <logon-user>faas@huawei</logon-user>
+                        <password>Huawei@123</password>
+                    </connection-info>
+                </module>
+
+                <module>
+                    <type xmlns:ce-adapter="urn:opendaylight:params:xml:ns:yang:controller:config:fabric:vlan:adapter:ce">
+                        ce-adapter:ce-connector
+                    </type>
+                    <name>ce-leaf1</name>
+
+                    <rpc-registry>
+                        <type xmlns:binding="urn:opendaylight:params:xml:ns:yang:controller:md:sal:binding">binding:binding-rpc-registry</type>
+                        <name>binding-rpc-broker</name>
+                    </rpc-registry>
+
+                    <data-broker>
+                      <type xmlns:binding="urn:opendaylight:params:xml:ns:yang:controller:md:sal:binding">binding:binding-async-data-broker</type>
+                      <name>binding-data-broker</name>
+                    </data-broker>
+
+                    <connection-info>
+                        <management-ip>192.168.1.142</management-ip>
+                        <logon-user>faas@huawei</logon-user>
+                        <password>Huawei@123</password>
+                    </connection-info>
+                </module>
+
+                <module>
+                    <type xmlns:ce-adapter="urn:opendaylight:params:xml:ns:yang:controller:config:fabric:vlan:adapter:ce">
+                        ce-adapter:ce-connector
+                    </type>
+                    <name>ce-leaf2</name>
+
+                    <rpc-registry>
+                        <type xmlns:binding="urn:opendaylight:params:xml:ns:yang:controller:md:sal:binding">binding:binding-rpc-registry</type>
+                        <name>binding-rpc-broker</name>
+                    </rpc-registry>
+
+                    <data-broker>
+                      <type xmlns:binding="urn:opendaylight:params:xml:ns:yang:controller:md:sal:binding">binding:binding-async-data-broker</type>
+                      <name>binding-data-broker</name>
+                    </data-broker>
+
+                    <connection-info>
+                        <management-ip>192.168.1.143</management-ip>
+                        <logon-user>faas@huawei</logon-user>
+                        <password>Huawei@123</password>
+                    </connection-info>
+                </module>
+            </modules>
+        </data>
+
+    </configuration>
+
+    <required-capabilities>
+        <capability>urn:opendaylight:params:xml:ns:yang:controller:config:fabric:vlan:adapter:ce?module=vlan-fabric-ce-adapter&amp;revision=2016-06-30</capability>
+        <capability>urn:opendaylight:params:xml:ns:yang:controller:config:vlan-fabric:impl?module=vlan-fabric-impl&amp;revision=2016-06-15</capability>
+        <capability>urn:opendaylight:params:xml:ns:yang:controller:config:fabric:impl?module=fabric-impl&amp;revision=2015-09-30</capability>
+    </required-capabilities>
+
+</snapshot>
