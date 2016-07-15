@@ -7,22 +7,14 @@
  */
 package org.opendaylight.faas.adapter.ce.vlan;
 
-import com.google.common.collect.Lists;
-
-import java.util.List;
-
 import org.opendaylight.controller.config.yang.config.fabric.vlan.adapter.ce.ConnectionInfo;
 import org.opendaylight.controller.md.sal.binding.api.DataBroker;
 import org.opendaylight.controller.md.sal.binding.api.WriteTransaction;
 import org.opendaylight.controller.md.sal.common.api.data.LogicalDatastoreType;
 import org.opendaylight.controller.sal.binding.api.RpcProviderRegistry;
+import org.opendaylight.faas.adapter.ce.vlan.task.DiscoveryInterface;
 import org.opendaylight.faas.fabric.utils.MdSalUtils;
-import org.opendaylight.yang.gen.v1.urn.tbd.params.xml.ns.yang.network.topology.rev131021.NodeId;
-import org.opendaylight.yang.gen.v1.urn.tbd.params.xml.ns.yang.network.topology.rev131021.TpId;
 import org.opendaylight.yang.gen.v1.urn.tbd.params.xml.ns.yang.network.topology.rev131021.network.topology.topology.Node;
-import org.opendaylight.yang.gen.v1.urn.tbd.params.xml.ns.yang.network.topology.rev131021.network.topology.topology.NodeBuilder;
-import org.opendaylight.yang.gen.v1.urn.tbd.params.xml.ns.yang.network.topology.rev131021.network.topology.topology.node.TerminationPoint;
-import org.opendaylight.yang.gen.v1.urn.tbd.params.xml.ns.yang.network.topology.rev131021.network.topology.topology.node.TerminationPointBuilder;
 import org.opendaylight.yangtools.yang.binding.InstanceIdentifier;
 
 public class CEConnector implements AutoCloseable {
@@ -41,34 +33,21 @@ public class CEConnector implements AutoCloseable {
         this.ceInfo = ceInfo;
 
         oper = new CETelnetOperator();
+        CETelnetExecutor.getInstance().addOperator(ceInfo.getManagementIp(), oper);
 
-        discoveryDevice();
+        connect();
+
+        DiscoveryInterface task = new DiscoveryInterface(ceInfo, databroker);
+
+        CETelnetExecutor.getInstance().addTask(ceInfo.getManagementIp(), task);
     }
 
-    private void discoveryDevice() {
+    private void connect() {
         boolean connected = oper.connect(ceInfo.getManagementIp(), ceInfo.getLogonUser(), ceInfo.getPassword());
         if (!connected) {
             return;
-
         }
         isConnected = true;
-        List<String> interfaces = oper.getInterfaces();
-
-        List<TerminationPoint> tps = Lists.newArrayList();
-        for (String ifname : interfaces) {
-            TerminationPointBuilder builder = new TerminationPointBuilder();
-            builder.setTpId(new TpId(ifname));
-            tps.add(builder.build());
-        }
-
-        InstanceIdentifier<Node> path = MdSalUtils.createNodeIId("CE", ceInfo.getManagementIp());
-        NodeBuilder builder = new NodeBuilder();
-        builder.setNodeId(new NodeId(ceInfo.getManagementIp()));
-        builder.setTerminationPoint(tps);
-
-        WriteTransaction wt = databroker.newWriteOnlyTransaction();
-        wt.put(LogicalDatastoreType.OPERATIONAL, path, builder.build(), true);
-        wt.submit();
     }
 
     @Override
@@ -78,6 +57,9 @@ public class CEConnector implements AutoCloseable {
     }
 
     private void clearDomstore() {
-
+        InstanceIdentifier<Node> path = MdSalUtils.createNodeIId("CE", ceInfo.getManagementIp());
+        WriteTransaction wt = databroker.newWriteOnlyTransaction();
+        wt.delete(LogicalDatastoreType.OPERATIONAL, path);
+        wt.submit();
     }
 }

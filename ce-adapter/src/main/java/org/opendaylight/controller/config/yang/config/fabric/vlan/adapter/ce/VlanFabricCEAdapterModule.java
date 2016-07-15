@@ -9,6 +9,7 @@ package org.opendaylight.controller.config.yang.config.fabric.vlan.adapter.ce;
 
 import org.opendaylight.controller.config.api.DependencyResolver;
 import org.opendaylight.controller.config.api.ModuleIdentifier;
+import org.opendaylight.faas.adapter.ce.vlan.CEAdapter;
 
 public class VlanFabricCEAdapterModule extends AbstractVlanFabricCEAdapterModule {
     public VlanFabricCEAdapterModule(ModuleIdentifier identifier, DependencyResolver dependencyResolver) {
@@ -28,15 +29,8 @@ public class VlanFabricCEAdapterModule extends AbstractVlanFabricCEAdapterModule
     }
 
     @Override
-    public java.lang.AutoCloseable createInstance() {
-        return new AutoCloseable() {
-
-            @Override
-            public void close() throws Exception {
-                // TODO Auto-generated method stub
-
-            }
-        };
+    public AutoCloseable createInstance() {
+        return new CEAdapter(this.getDataBrokerDependency(), this.getRpcRegistryDependency());
     }
 
 }

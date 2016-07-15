@@ -7,9 +7,7 @@
  */
 package org.opendaylight.faas.adapter.ce.vlan;
 
-import java.util.List;
-
 public interface  ConsoleParser<E> {
 
-    List<E> parseConsole(String str);
+    E parseConsole(String str);
 }

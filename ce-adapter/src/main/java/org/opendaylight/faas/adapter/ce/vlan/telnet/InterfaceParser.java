@@ -5,13 +5,15 @@
  * terms of the Eclipse Public License v1.0 which accompanies this distribution,
  * and is available at http://www.eclipse.org/legal/epl-v10.html
  */
-package org.opendaylight.faas.adapter.ce.vlan;
+package org.opendaylight.faas.adapter.ce.vlan.telnet;
 
 import com.google.common.collect.Lists;
 
 import java.util.List;
 
-public class InterfaceParser implements ConsoleParser<String> {
+import org.opendaylight.faas.adapter.ce.vlan.ConsoleParser;
+
+public class InterfaceParser implements ConsoleParser<List<String>> {
 
     @Override
     public List<String> parseConsole(String str) {
@@ -27,7 +29,7 @@ public class InterfaceParser implements ConsoleParser<String> {
             if (found) {
                 String name = s.split(" ")[0];
                 char firstchar = name.charAt(0);
-                if (firstchar == 'M' || firstchar == 'N') {
+                if (firstchar == 'M' || firstchar == 'N' || firstchar == '<') {
                     continue;
                 }
                 ret.add(name);

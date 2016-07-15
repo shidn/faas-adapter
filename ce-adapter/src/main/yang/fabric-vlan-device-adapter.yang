@@ -1,0 +1,54 @@
+module ce-device {
+
+    yang-version 1;
+    namespace "urn:opendaylight:faas:device:ce";
+    prefix ce;
+
+    import network-topology { prefix "topo"; revision-date "2013-10-21"; }
+    import ietf-inet-types { prefix "inet"; revision-date "2013-07-15"; }
+    import fabric-capable-device { prefix "device"; revision-date "2015-09-30"; }
+    import fabric-types { prefix fabrictype; revision-date "2015-09-30"; }
+    import yang-ext { prefix "ext"; revision-date "2013-07-09"; }
+
+    description
+        "This module contains the config model for vlan capable fabric devices.";
+
+    revision "2016-06-15" {
+        description
+            "Initial revision of faas.";
+    }
+
+	grouping grp-ce-node {
+		leaf sysname {
+			type string;
+		}
+	}
+
+	grouping grp-ce-tp {
+		leaf has-neighbor {
+			type boolean;
+		}
+
+		list neighbor {
+			leaf sysname {
+				type string;
+			}
+			leaf interface {
+				type string;
+			}
+		}		
+	}
+
+    augment "/topo:network-topology/topo:topology/topo:node" {
+		ext:augment-identifier "ce-node";
+
+		uses grp-ce-node;
+    }
+
+    augment "/topo:network-topology/topo:topology/topo:node/topo:termination-point" {
+		ext:augment-identifier "ce-tp";
+
+		uses grp-ce-tp;
+    }
+
+}
