@@ -93,6 +93,10 @@ public class CETelnetOperator implements AutoCloseable {
         }
     }
 
+    /**
+     * Configure vlan on CE Device.
+     * @param vlan Vlan Tag
+     */
     public void configVlan(int vlan) {
         String cmd = String.format("vlan %d", vlan);
 
@@ -102,10 +106,222 @@ public class CETelnetOperator implements AutoCloseable {
         write(cmd);
         readUntil(promptCharSys);
 
-        sendQuitCmd();
+        stat.userView();
+    }
+
+    /**
+     * Configure vrf on CE Device.<br>
+     * for CE device, vrf is vpn-instance
+     * @param vrfCtx vrf Tag
+     */
+    public void configVrf(int vrfCtx) {
+        String[] cmds = new String[] {
+                String.format("ip vpn-instance tenant%d", vrfCtx),
+                String.format("ipv4-family"),
+                String.format("route-distinguisher %d:0", vrfCtx)
+        };
+
+
+        this.checkConnection();
+        stat.systemView();
+
+        for (String cmd : cmds) {
+            write(cmd);
+            readUntil(promptCharSys);
+        }
 
         stat.userView();
     }
+
+    /**
+     * Configure access port.
+     * @param portName name of port
+     * @param interVlan vlan of port
+     */
+    public void configAccessPort(String portName, int interVlan) {
+        String[] cmds = new String[] {
+                String.format("interface %s", portName),
+                String.format("port link-type access"),
+                String.format("port default vlan %d", interVlan)
+        };
+
+
+        this.checkConnection();
+        stat.systemView();
+
+        for (String cmd : cmds) {
+            write(cmd);
+            readUntil(promptCharSys);
+        }
+
+        stat.userView();
+    }
+
+    /**
+    * Configure trunk port.
+    * @param portName name of port
+    * @param interVlan vlan of port
+    * @param outerVlan outer vlan of port
+    */
+    public void configTrunkPort(String portName, int interVlan, int outerVlan) {
+        String[] cmds = new String[] {
+                String.format("interface %s", portName),
+                String.format("port link-type trunk"),
+                String.format("port trunk allow-pass vlan %d", interVlan),
+                String.format("port vlan-mapping vlan %d map-vlan %d", outerVlan, interVlan)
+        };
+
+        this.checkConnection();
+        stat.systemView();
+
+        for (String cmd : cmds) {
+            write(cmd);
+            readUntil(promptCharSys);
+        }
+
+        stat.userView();
+    }
+
+    /**
+     *
+     * @param portName
+     */
+    public void configTrunkPortAllowAll(String portName) {
+        String[] cmds = new String[] {
+                String.format("interface %s", portName),
+                String.format("port link-type trunk"),
+                String.format("port trunk allow-pass vlan all")
+        };
+
+
+        this.checkConnection();
+        stat.systemView();
+
+        for (String cmd : cmds) {
+            write(cmd);
+            readUntil(promptCharSys);
+        }
+
+        stat.userView();
+    }
+
+    /**
+     * Configure gateway ip on VlanIf
+     * @param ip ip addresss
+     * @param mask network mask
+     * @param vlan vlan
+     * @param vrfCtx vrfctx, for CE is vpn-instance
+     */
+    public void configGatewayPort(String ip, int mask, int vlan, int vrfCtx) {
+        String[] cmds = new String[] {
+                String.format("interface Vlanif%d", vlan),
+                String.format("ip binding vpn-instance tenant%d", vrfCtx),
+                String.format("ip address %s %d", ip, mask)
+        };
+
+        this.checkConnection();
+        stat.systemView();
+
+        for (String cmd : cmds) {
+            write(cmd);
+            readUntil(promptCharSys);
+        }
+
+        stat.userView();
+    }
+
+    public void deleteGatewayPort(int vrfCtx, int vlan) {
+        String[] cmds = new String[] {
+                String.format("interface Vlanif%d", vlan),
+                String.format("undo ip binding vpn-instance tenant%d", vrfCtx),
+                String.format("undo ip address ")
+        };
+
+        this.checkConnection();
+        stat.systemView();
+
+        for (String cmd : cmds) {
+            write(cmd);
+            readUntil(promptCharSys);
+        }
+
+        stat.userView();
+    }
+
+    /**
+     * Configure static route.
+     * @param vrfCtx
+     * @param destIp
+     * @param nexthop
+     */
+    public void configStaticRoute(int vrfCtx, String destIp, String nexthop) {
+        String[] cmds = new String[] {
+                String.format("ip route-static vpn-instance tenant%d %s %s", vrfCtx, destIp, nexthop)};
+
+        this.checkConnection();
+        stat.systemView();
+
+        for (String cmd : cmds) {
+            write(cmd);
+            readUntil(promptCharSys);
+        }
+        stat.userView();
+    }
+
+    /**
+     *
+     * @param vrfCtx
+     */
+    public void clearStaticRoute(int vrfCtx) {
+        String[] cmds = new String[] {
+                String.format("undo ip route-static vpn-instance tenant%d all", vrfCtx)};
+
+        this.checkConnection();
+        stat.systemView();
+
+        for (String cmd : cmds) {
+            write(cmd);
+            readUntil(promptCharSys);
+        }
+        stat.userView();
+    }
+
+   /**
+    *
+    * @param vrfCtx
+    */
+   public void rmStaticRoute(int vrfCtx, String destIp) {
+       String[] cmds = new String[] {
+               String.format("undo ip route-static vpn-instance tenant%d %s", vrfCtx, destIp)};
+
+       this.checkConnection();
+       stat.systemView();
+
+       for (String cmd : cmds) {
+           write(cmd);
+           readUntil(promptCharSys);
+       }
+       stat.userView();
+   }
+
+   /**
+    *
+    * @param portNames
+    */
+   public void clearInterfaceConfig(String[] portNames) {
+       String cmd = "clear interface configuration %s";
+
+       this.checkConnection();
+       stat.systemView();
+
+       for (String port : portNames) {
+           write(String.format(cmd, port));
+           readUntil(promptCharSys);
+           write("Y");
+           readUntil(promptCharSys);
+       }
+       stat.userView();
+   }
 
     private String readUntil(String pattern) {
         return readUntil(pattern, null);
@@ -141,11 +357,6 @@ public class CETelnetOperator implements AutoCloseable {
             LOG.error(this.devIp, e);
         }
         return buf.toString();
-    }
-
-    private void sendQuitCmd() {
-        write("quit");
-        readUntil(promptCharSys, promptCharUser);
     }
 
     private void write(String value) {
@@ -247,7 +458,7 @@ public class CETelnetOperator implements AutoCloseable {
                     reconnect();
                     break;
                 case SYSVIEW:
-                    write("quit");
+                    write("return");
                     readUntil(promptCharUser);
                     break;
                 default:
