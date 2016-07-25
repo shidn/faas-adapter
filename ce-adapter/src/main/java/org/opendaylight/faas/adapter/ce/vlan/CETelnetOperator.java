@@ -18,6 +18,7 @@ import java.util.Map;
 import org.apache.commons.net.telnet.TelnetClient;
 import org.opendaylight.faas.adapter.ce.vlan.telnet.InterfaceParser;
 import org.opendaylight.faas.adapter.ce.vlan.telnet.LldpNeighborParser;
+import org.opendaylight.faas.adapter.ce.vlan.telnet.VpnInstanceParser;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.faas.device.ce.rev160615.grp.ce.tp.Neighbor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,6 +69,15 @@ public class CETelnetOperator implements AutoCloseable {
         return parser.parseConsole(str);
     }
 
+    public List<String> getVpnInstances() {
+        final String cmd = "display ip vpn-instance | no-more";
+
+        write(cmd);
+        String str = readUntil(promptCharUser);
+        VpnInstanceParser parser = new VpnInstanceParser();
+        return parser.parseConsole(str);
+
+    }
 
     /**
      * Setup a connection to device.
@@ -304,12 +314,25 @@ public class CETelnetOperator implements AutoCloseable {
        stat.userView();
    }
 
+   public void rmVrfs(List<String> vpnInstances) {
+       String cmd = "undo ip vpn-instance %s";
+
+       this.checkConnection();
+       stat.systemView();
+
+       for (String vpnInst : vpnInstances) {
+           write(String.format(cmd, vpnInst));
+           readUntil(promptCharSys);
+       }
+       stat.userView();
+   }
+
    /**
     *
     * @param portNames
     */
-   public void clearInterfaceConfig(String[] portNames) {
-       String cmd = "clear interface configuration %s";
+   public void clearInterfaceConfig(List<String> portNames) {
+       String cmd = "clear configuration interface %s";
 
        this.checkConnection();
        stat.systemView();
@@ -323,7 +346,7 @@ public class CETelnetOperator implements AutoCloseable {
        stat.userView();
    }
 
-    private String readUntil(String pattern) {
+   private String readUntil(String pattern) {
         return readUntil(pattern, null);
     }
 

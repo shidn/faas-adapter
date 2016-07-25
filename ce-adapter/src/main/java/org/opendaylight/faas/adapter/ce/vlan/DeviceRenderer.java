@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015 Huawei Technologies Co. Ltd. and others. All rights reserved.
+ * Copyright (c) 2016 Huawei Technologies Co. Ltd. and others. All rights reserved.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v1.0 which accompanies this distribution,
@@ -20,7 +20,10 @@ import org.opendaylight.controller.md.sal.binding.api.ReadOnlyTransaction;
 import org.opendaylight.controller.md.sal.common.api.data.LogicalDatastoreType;
 import org.opendaylight.faas.fabric.utils.MdSalUtils;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.faas.fabric.capable.device.rev150930.FabricCapableDevice;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.faas.fabric.capable.device.rev150930.fabric.capable.device.config.BdPort;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.faas.fabric.capable.device.rev150930.fabric.capable.device.config.Bdif;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.faas.fabric.capable.device.rev150930.fabric.capable.device.config.BridgeDomain;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.faas.fabric.capable.device.rev150930.fabric.capable.device.config.Vrf;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.faas.fabric.capable.device.rev150930.network.topology.topology.node.Config;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.faas.fabric.rev150930.FabricId;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.faas.fabric.rev150930.FabricOptions.TrafficBehavior;
@@ -43,6 +46,9 @@ public class DeviceRenderer implements AutoCloseable {
     private final DataBroker databroker;
 
     private final ListenerRegistration<BridgeDomainRenderer> bridgeDomainListener;
+    private final ListenerRegistration<BridgeDomainPortRenderer> bdPortListener;
+    private final ListenerRegistration<BdifRenderer> bdifListener;
+    private final ListenerRegistration<VrfRenderer> vrfListener;
 
     public DeviceRenderer(ExecutorService exector, DataBroker databroker, InstanceIdentifier<Node> iid, Node node,
             FabricId fabricId) {
@@ -52,13 +58,29 @@ public class DeviceRenderer implements AutoCloseable {
         this.fabricId = fabricId;
 
         ctx = new DeviceContext(node, iid);
+        ctx.setBridgeName(node.getNodeId().getValue());
 
-        BridgeDomainRenderer bdRenderer = new BridgeDomainRenderer(node.getNodeId().getValue());
-        DataTreeIdentifier<BridgeDomain> dtid = new DataTreeIdentifier<BridgeDomain>(LogicalDatastoreType.OPERATIONAL,
+        BridgeDomainRenderer bdRenderer = new BridgeDomainRenderer(ctx);
+        DataTreeIdentifier<BridgeDomain> bdDtid = new DataTreeIdentifier<BridgeDomain>(LogicalDatastoreType.OPERATIONAL,
                 iid.augmentation(FabricCapableDevice.class).child(Config.class).child(BridgeDomain.class));
-        bridgeDomainListener = databroker.registerDataTreeChangeListener(dtid, bdRenderer);
+        bridgeDomainListener = databroker.registerDataTreeChangeListener(bdDtid, bdRenderer);
 
-        // Initialize openflow pipeline in this Device
+        BridgeDomainPortRenderer bdPortRenderer = new BridgeDomainPortRenderer(ctx);
+        DataTreeIdentifier<BdPort> bdPortDtid = new DataTreeIdentifier<BdPort>(LogicalDatastoreType.OPERATIONAL,
+                iid.augmentation(FabricCapableDevice.class).child(Config.class).child(BdPort.class));
+        bdPortListener = databroker.registerDataTreeChangeListener(bdPortDtid, bdPortRenderer);
+
+
+        BdifRenderer bdifRenderer = new BdifRenderer(ctx);
+        DataTreeIdentifier<Bdif> bdifDtid = new DataTreeIdentifier<Bdif>(LogicalDatastoreType.OPERATIONAL,
+                iid.augmentation(FabricCapableDevice.class).child(Config.class).child(Bdif.class));
+        bdifListener = databroker.registerDataTreeChangeListener(bdifDtid, bdifRenderer);
+
+        VrfRenderer vrfRenderer = new VrfRenderer(ctx);
+        DataTreeIdentifier<Vrf> vrfDtid = new DataTreeIdentifier<Vrf>(LogicalDatastoreType.OPERATIONAL,
+                iid.augmentation(FabricCapableDevice.class).child(Config.class).child(Vrf.class));
+        vrfListener = databroker.registerDataTreeChangeListener(vrfDtid, vrfRenderer);
+
         readFabricOptions(node);
     }
 
@@ -91,5 +113,8 @@ public class DeviceRenderer implements AutoCloseable {
     @Override
     public void close() {
         bridgeDomainListener.close();
+        bdPortListener.close();
+        bdifListener.close();
+        vrfListener.close();
     }
 }

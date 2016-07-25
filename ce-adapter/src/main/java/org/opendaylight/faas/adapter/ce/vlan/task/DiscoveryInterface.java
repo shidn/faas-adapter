@@ -35,9 +35,12 @@ public class DiscoveryInterface extends AbstractTask {
     private ConnectionInfo ceInfo;
     private DataBroker dataBroker;
 
-    public DiscoveryInterface(ConnectionInfo ceInfo, DataBroker dataBroker) {
+    private boolean clearConfig = false;
+
+    public DiscoveryInterface(ConnectionInfo ceInfo, DataBroker dataBroker, boolean clearConfig) {
         this.ceInfo = ceInfo;
         this.dataBroker = dataBroker;
+        this.clearConfig = clearConfig;
     }
 
     private void discoveryDevice() {
@@ -70,6 +73,13 @@ public class DiscoveryInterface extends AbstractTask {
         WriteTransaction wt = dataBroker.newWriteOnlyTransaction();
         wt.put(LogicalDatastoreType.OPERATIONAL, path, nodeBuilder.build(), true);
         wt.submit();
+
+        if (clearConfig) {
+            getOperator().clearInterfaceConfig(interfaces);
+
+            List<String> vpnInsts = getOperator().getVpnInstances();
+            getOperator().rmVrfs(vpnInsts);
+        }
     }
 
     @Override

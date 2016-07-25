@@ -21,9 +21,11 @@ public class BridgeDomainRenderer implements DataTreeChangeListener<BridgeDomain
     private static final Logger LOG = LoggerFactory.getLogger(BridgeDomainRenderer.class);
 
     private String device;
+    private DeviceContext ctx;
 
-    public BridgeDomainRenderer(String device) {
-        this.device = device;
+    public BridgeDomainRenderer(DeviceContext ctx) {
+        this.device = ctx.getBridgeName();
+        this.ctx = ctx;
     }
 
     @Override
@@ -32,10 +34,16 @@ public class BridgeDomainRenderer implements DataTreeChangeListener<BridgeDomain
         for (DataTreeModification<BridgeDomain> change : changes) {
             switch (change.getRootNode().getModificationType()) {
                 case DELETE: {
+                    BridgeDomain oldBd = change.getRootNode().getDataBefore();
+                    ctx.rmBd(oldBd.getId());
                     break;
                 }
                 case WRITE: {
-                    int vlan = change.getRootNode().getDataAfter().getSegment().intValue();
+                    BridgeDomain newBd = change.getRootNode().getDataAfter();
+                    int vlan = newBd.getSegment().intValue();
+
+                    ctx.addBd(newBd.getId(), vlan);
+
                     ConfigVlan task = new ConfigVlan(vlan);
 
                     CETelnetExecutor.getInstance().addTask(device, task);

@@ -37,7 +37,7 @@ public class CEConnector implements AutoCloseable {
 
         connect();
 
-        DiscoveryInterface task = new DiscoveryInterface(ceInfo, databroker);
+        DiscoveryInterface task = new DiscoveryInterface(ceInfo, databroker, true);
 
         CETelnetExecutor.getInstance().addTask(ceInfo.getManagementIp(), task);
     }

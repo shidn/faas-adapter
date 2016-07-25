@@ -352,9 +352,9 @@ if __name__ == "__main__":
 
     print "binding physical port"
     pause()
-    post(controller, DEFAULT_PORT, rpc_port_binding_dev_uri(), rpc_port_binding_dev_data("vswitch-1", "vswitch-1-p-1", "192.168.1.142", "10GE1/0/35"), True)
-    post(controller, DEFAULT_PORT, rpc_port_binding_dev_uri(), rpc_port_binding_dev_data("vswitch-2", "vswitch-2-p-1", "192.168.1.142", "10GE1/0/25"), True)
-    post(controller, DEFAULT_PORT, rpc_port_binding_dev_uri(), rpc_port_binding_dev_data("vswitch-3", "vswitch-3-p-1", "192.168.1.143", "10GE1/0/25"), True)
+    #post(controller, DEFAULT_PORT, rpc_port_binding_dev_uri(), rpc_port_binding_dev_data("vswitch-1", "vswitch-1-p-1", "192.168.1.142", "10GE1/0/35"), True)
+    #post(controller, DEFAULT_PORT, rpc_port_binding_dev_uri(), rpc_port_binding_dev_data("vswitch-2", "vswitch-2-p-1", "192.168.1.142", "10GE1/0/25"), True)
+    #post(controller, DEFAULT_PORT, rpc_port_binding_dev_uri(), rpc_port_binding_dev_data("vswitch-3", "vswitch-3-p-1", "192.168.1.143", "10GE1/0/25"), True)
 
     print "create gateway ..."
     pause()

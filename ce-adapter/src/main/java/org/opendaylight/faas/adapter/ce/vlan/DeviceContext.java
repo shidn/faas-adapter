@@ -12,7 +12,6 @@ import com.google.common.collect.Maps;
 
 import java.util.Map;
 
-import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.IpAddress;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.faas.fabric.rev150930.FabricOptions.TrafficBehavior;
 import org.opendaylight.yang.gen.v1.urn.tbd.params.xml.ns.yang.network.topology.rev131021.network.topology.topology.Node;
 import org.opendaylight.yangtools.yang.binding.InstanceIdentifier;
@@ -25,6 +24,8 @@ public class DeviceContext {
 
     private TrafficBehavior trafficBehavior = TrafficBehavior.Normal;
 
+    Map<String, Integer> bdCache = Maps.newHashMap();
+    Map<String, Integer> vrfCache = Maps.newHashMap();
 
     DeviceContext(Node node, InstanceIdentifier<Node> nodeIid) {
         myIId = nodeIid;
@@ -56,4 +57,35 @@ public class DeviceContext {
         return trafficBehavior;
     }
 
+    public void addBd(String name, int vlan) {
+        this.bdCache.put(name, vlan);
+    }
+
+    public void rmBd(String name) {
+        this.bdCache.remove(name);
+    }
+
+    public int getVlanOfBd(String name) {
+        if (bdCache.containsKey(name)) {
+            return bdCache.get(name);
+        } else {
+            return 0;
+        }
+    }
+
+    public void addVrf(String name, int vlan) {
+        this.vrfCache.put(name, vlan);
+    }
+
+    public void rmVrf(String name) {
+        this.vrfCache.remove(name);
+    }
+
+    public int getVrf(String name) {
+        if (vrfCache.containsKey(name)) {
+            return vrfCache.get(name);
+        } else {
+            return 0;
+        }
+    }
 }

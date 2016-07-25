@@ -7,14 +7,24 @@
  */
 package org.opendaylight.faas.adapter.ce.vlan.task;
 
-import java.util.concurrent.Callable;
+import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.IpAddress;
 
-public class ConfigVlanIf implements Callable<Void> {
+public class ConfigVlanIf extends AbstractTask {
 
-    @Override
-    public Void call() throws Exception {
-        // TODO Auto-generated method stub
-        return null;
+    int vlan;
+    IpAddress ip;
+    int mask;
+    int vrfCtx;
+
+    public ConfigVlanIf(int vlan, int vrfCtx, IpAddress ip, int mask) {
+        this.vlan = vlan;
+        this.ip = ip;
+        this.mask = mask;
+        this.vrfCtx = vrfCtx;
     }
 
+    @Override
+    void run() {
+        this.getOperator().configGatewayPort(new String(ip.getValue()), mask, vlan, vrfCtx);
+    }
 }
