@@ -7,24 +7,25 @@
  */
 package org.opendaylight.faas.adapter.ce.vlan.task;
 
-import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.IpAddress;
+import com.google.common.collect.Lists;
 
-public class ConfigVlanIf extends AbstractTask {
+public class ConfigVrf extends AbstractTask {
 
-    int vlan;
-    IpAddress ip;
-    int mask;
     int vrfCtx;
+    private boolean isDelete;
 
-    public ConfigVlanIf(int vlan, int vrfCtx, IpAddress ip, int mask) {
-        this.vlan = vlan;
-        this.ip = ip;
-        this.mask = mask;
+    public ConfigVrf(int vrfCtx, boolean isDelete) {
         this.vrfCtx = vrfCtx;
+        this.isDelete = isDelete;
     }
 
     @Override
     void run() {
-        this.getOperator().configGatewayPort(new String(ip.getValue()), mask, vlan, vrfCtx);
+        if (isDelete) {
+            getOperator().rmVrfs(Lists.newArrayList("tenant" + vrfCtx));
+        } else {
+            getOperator().configVrf(vrfCtx);
+        }
     }
+
 }

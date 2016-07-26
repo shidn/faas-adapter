@@ -219,8 +219,7 @@ def rpc_locate_endpoint_data1():
             "location": {
                 "node-ref":"/network-topology:network-topology/network-topology:topology[network-topology:topology-id='CE']/network-topology:node[network-topology:node-id='192.168.1.142']",
                 "tp-ref":"/network-topology:network-topology/network-topology:topology[network-topology:topology-id='CE']/network-topology:node[network-topology:node-id='192.168.1.142']/network-topology:termination-point[network-topology:tp-id='10GE1/0/35']",
-                "access-type":"vlan",
-                "access-segment":101
+                "access-type":"exclusive"
             }
        }
     }
@@ -233,8 +232,7 @@ def rpc_locate_endpoint_data2():
             "location": {
                 "node-ref":"/network-topology:network-topology/network-topology:topology[network-topology:topology-id='CE']/network-topology:node[network-topology:node-id='192.168.1.142']",
                 "tp-ref":"/network-topology:network-topology/network-topology:topology[network-topology:topology-id='CE']/network-topology:node[network-topology:node-id='192.168.1.142']/network-topology:termination-point[network-topology:tp-id='10GE1/0/25']",
-                "access-type":"vlan",
-                "access-segment":102
+                "access-type":"exclusive"
             }
        }
     }
@@ -247,8 +245,7 @@ def rpc_locate_endpoint_data3():
             "location": {
                 "node-ref":"/network-topology:network-topology/network-topology:topology[network-topology:topology-id='CE']/network-topology:node[network-topology:node-id='192.168.1.143']",
                 "tp-ref":"/network-topology:network-topology/network-topology:topology[network-topology:topology-id='CE']/network-topology:node[network-topology:node-id='192.168.1.143']/network-topology:termination-point[network-topology:tp-id='10GE1/0/25']",
-                "access-type":"vlan",
-                "access-segment":103
+                "access-type":"exclusive"
             }
        }
     }
@@ -303,6 +300,23 @@ def rpc_rm_gateway_data(ipaddr):
            "ip-address":ipaddr,
            "logical-router":"vrouter-1"
        }
+    }
+
+def rpc_add_route_uri():
+    return "/restconf/operations/fabric-service:add-static-route"
+
+def rpc_add_route(fabricId, destIp, nexthop, interface):
+    return {
+      "input" : {
+           "fabric-id" : fabricId,
+           "node-id" : "vrouter-1",
+           "route" : [
+               { "destination-prefix" : destIp,
+                 "next-hop" : nexthop,
+                 "outgoing-interface" : interface
+               }
+           ]
+        }
     }
 
 def pause():
@@ -361,4 +375,8 @@ if __name__ == "__main__":
     post(controller, DEFAULT_PORT, rpc_create_gateway_uri(), rpc_create_gateway_data("172.16.1.1", "172.16.1.0/24", "vswitch-1"), True)
     post(controller, DEFAULT_PORT, rpc_create_gateway_uri(), rpc_create_gateway_data("172.16.2.1", "172.16.2.0/24", "vswitch-2"), True)
     post(controller, DEFAULT_PORT, rpc_create_gateway_uri(), rpc_create_gateway_data("172.16.3.1", "172.16.3.0/24", "vswitch-3"), True)
+
+    print "create static route..."
+    pause()
+    post(controller, DEFAULT_PORT, rpc_add_route_uri(), rpc_add_route("fabric:1", "172.16.1.14/32", "10.0.0.2", "10.0.0.1"), True)
 

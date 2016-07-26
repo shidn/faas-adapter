@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015 Huawei Technologies Co. Ltd. and others. All rights reserved.
+ * Copyright (c) 2016 Huawei Technologies Co. Ltd. and others. All rights reserved.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v1.0 which accompanies this distribution,
@@ -11,6 +11,7 @@ import com.google.common.collect.Lists;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.opendaylight.controller.config.yang.config.fabric.vlan.adapter.ce.ConnectionInfo;
 import org.opendaylight.controller.md.sal.binding.api.DataBroker;
@@ -79,6 +80,14 @@ public class DiscoveryInterface extends AbstractTask {
 
             List<String> vpnInsts = getOperator().getVpnInstances();
             getOperator().rmVrfs(vpnInsts);
+        }
+
+        configUNIInterface(neighbors.keySet());
+    }
+
+    private void configUNIInterface(Set<String> interfaces) {
+        for (String name : interfaces) {
+            getOperator().configTrunkPortAllowAll(name);
         }
     }
 
