@@ -15,7 +15,13 @@ public abstract class AbstractTask implements Callable<Void> {
 
     private CETelnetOperator oper;
 
+    private boolean isDelete;
+
     abstract void run();
+
+    AbstractTask(boolean isDelete) {
+        this.isDelete = isDelete;
+    }
 
     @Override
     public Void call() throws Exception {
@@ -29,5 +35,9 @@ public abstract class AbstractTask implements Callable<Void> {
 
     CETelnetOperator getOperator() {
         return this.oper;
+    }
+
+    boolean isDelete() {
+        return this.isDelete;
     }
 }

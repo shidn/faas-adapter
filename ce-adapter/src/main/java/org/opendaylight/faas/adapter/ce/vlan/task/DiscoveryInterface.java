@@ -39,6 +39,7 @@ public class DiscoveryInterface extends AbstractTask {
     private boolean clearConfig = false;
 
     public DiscoveryInterface(ConnectionInfo ceInfo, DataBroker dataBroker, boolean clearConfig) {
+        super(false);
         this.ceInfo = ceInfo;
         this.dataBroker = dataBroker;
         this.clearConfig = clearConfig;

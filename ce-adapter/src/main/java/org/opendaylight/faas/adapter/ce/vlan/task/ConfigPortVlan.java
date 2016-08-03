@@ -18,7 +18,8 @@ public class ConfigPortVlan extends AbstractTask {
 
     private int vlan;
 
-    public ConfigPortVlan(String portName) {
+    public ConfigPortVlan(String portName, boolean isDelete) {
+        super(isDelete);
         this.portName = portName;
     }
 

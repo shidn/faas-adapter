@@ -7,13 +7,21 @@
  */
 package org.opendaylight.faas.adapter.ce.vlan;
 
-import java.util.Collection;
+import com.google.common.collect.Sets;
 
+import java.util.Collection;
+import java.util.Set;
+
+import org.opendaylight.controller.md.sal.binding.api.DataBroker;
+import org.opendaylight.controller.md.sal.binding.api.DataObjectModification;
 import org.opendaylight.controller.md.sal.binding.api.DataTreeChangeListener;
 import org.opendaylight.controller.md.sal.binding.api.DataTreeModification;
+import org.opendaylight.faas.adapter.ce.vlan.task.ConfigAcl;
 import org.opendaylight.faas.adapter.ce.vlan.task.ConfigVlanIf;
 import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.IpAddress;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.faas.fabric.capable.device.rev150930.fabric.capable.device.config.Bdif;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.faas.fabric.type.rev150930.acl.list.FabricAcl;
+import org.opendaylight.yangtools.yang.binding.DataObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,10 +31,12 @@ public class BdifRenderer implements DataTreeChangeListener<Bdif> {
 
     private String device;
     private DeviceContext ctx;
+    private DataBroker databorker;
 
-    public BdifRenderer(DeviceContext ctx) {
+    public BdifRenderer(DeviceContext ctx, DataBroker databroker) {
         this.device = ctx.getBridgeName();
         this.ctx = ctx;
+        this.databorker = databroker;
     }
 
     @Override
@@ -42,12 +52,27 @@ public class BdifRenderer implements DataTreeChangeListener<Bdif> {
                     IpAddress ip = bdif.getIpAddress();
                     int mask = bdif.getMask();
 
-                    ConfigVlanIf task = new ConfigVlanIf(ctx.getVlanOfBd(bdif.getBdid()), vrfCtx, ip, mask);
+                    ConfigVlanIf task = new ConfigVlanIf(ctx.getVlanOfBd(bdif.getBdid()), vrfCtx, ip, mask, false);
                     CETelnetExecutor.getInstance().addTask(device, task);
                     break;
                 }
                 case SUBTREE_MODIFIED: {
-                    // DO NOTHING
+                    final Bdif bdif = change.getRootNode().getDataAfter();
+                    Collection<DataObjectModification<? extends DataObject>> subChanges = change.getRootNode().getModifiedChildren();
+                    boolean aclChanged = false;
+                    for (DataObjectModification<? extends DataObject> subChange : subChanges) {
+                        if (subChange.getDataType().equals(FabricAcl.class)) {
+                            aclChanged = true;
+                        }
+                    }
+                    if (aclChanged) {
+                        Set<String> aclNames = Sets.newHashSet();
+                        for (FabricAcl acl : bdif.getFabricAcl()) {
+                            aclNames.add(acl.getFabricAclName());
+                        }
+                        ConfigAcl task = new ConfigAcl(aclNames, getVlanIfName(ctx.getVlanOfBd(bdif.getBdid())), false, this.databorker);
+                        CETelnetExecutor.getInstance().addTask(device, task);
+                    }
                     break;
                 }
                 default:
@@ -56,4 +81,7 @@ public class BdifRenderer implements DataTreeChangeListener<Bdif> {
         }
     }
 
+    private String getVlanIfName(int vlan) {
+        return "Vlanif" + vlan;
+    }
 }

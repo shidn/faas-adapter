@@ -44,7 +44,7 @@ public class BridgeDomainRenderer implements DataTreeChangeListener<BridgeDomain
 
                     ctx.addBd(newBd.getId(), vlan);
 
-                    ConfigVlan task = new ConfigVlan(vlan);
+                    ConfigVlan task = new ConfigVlan(vlan, false);
 
                     CETelnetExecutor.getInstance().addTask(device, task);
                     break;

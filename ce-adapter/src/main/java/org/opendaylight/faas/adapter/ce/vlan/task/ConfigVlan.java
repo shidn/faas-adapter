@@ -11,7 +11,8 @@ public class ConfigVlan extends AbstractTask {
 
     int vlan;
 
-    public ConfigVlan(int vlan) {
+    public ConfigVlan(int vlan, boolean isDelete) {
+        super(isDelete);
         this.vlan = vlan;
     }
 

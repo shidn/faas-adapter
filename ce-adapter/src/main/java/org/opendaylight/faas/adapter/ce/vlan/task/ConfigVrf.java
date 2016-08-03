@@ -12,16 +12,15 @@ import com.google.common.collect.Lists;
 public class ConfigVrf extends AbstractTask {
 
     int vrfCtx;
-    private boolean isDelete;
 
     public ConfigVrf(int vrfCtx, boolean isDelete) {
+        super(isDelete);
         this.vrfCtx = vrfCtx;
-        this.isDelete = isDelete;
     }
 
     @Override
     void run() {
-        if (isDelete) {
+        if (isDelete()) {
             getOperator().rmVrfs(Lists.newArrayList("tenant" + vrfCtx));
         } else {
             getOperator().configVrf(vrfCtx);

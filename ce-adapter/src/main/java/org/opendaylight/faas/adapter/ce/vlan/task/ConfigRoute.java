@@ -18,18 +18,17 @@ import org.opendaylight.yang.gen.v1.urn.opendaylight.faas.fabric.type.rev150930.
 public class ConfigRoute extends AbstractTask {
 
     int vrfCtx;
-    private boolean isDelete;
 
     private List<Route> routes = Lists.newArrayList();
 
     public ConfigRoute(int vrfCtx, boolean isDelete) {
+        super(isDelete);
         this.vrfCtx = vrfCtx;
-        this.isDelete = isDelete;
     }
 
     @Override
     void run() {
-        if (isDelete) {
+        if (isDelete()) {
             if (routes.isEmpty()) {
                 getOperator().clearStaticRoute(vrfCtx);
             } else {

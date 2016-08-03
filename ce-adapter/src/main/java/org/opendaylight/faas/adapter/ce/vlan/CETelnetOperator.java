@@ -7,6 +7,8 @@
  */
 package org.opendaylight.faas.adapter.ce.vlan;
 
+import com.google.common.collect.Lists;
+
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -19,6 +21,17 @@ import org.apache.commons.net.telnet.TelnetClient;
 import org.opendaylight.faas.adapter.ce.vlan.telnet.InterfaceParser;
 import org.opendaylight.faas.adapter.ce.vlan.telnet.LldpNeighborParser;
 import org.opendaylight.faas.adapter.ce.vlan.telnet.VpnInstanceParser;
+import org.opendaylight.faas.fabric.utils.IpAddressUtils;
+import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.access.control.list.rev160218.access.lists.acl.access.list.entries.Ace;
+import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.access.control.list.rev160218.access.lists.acl.access.list.entries.ace.actions.PacketHandling;
+import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.access.control.list.rev160218.access.lists.acl.access.list.entries.ace.actions.packet.handling.Deny;
+import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.access.control.list.rev160218.access.lists.acl.access.list.entries.ace.actions.packet.handling.Permit;
+import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.access.control.list.rev160218.access.lists.acl.access.list.entries.ace.matches.AceType;
+import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.access.control.list.rev160218.access.lists.acl.access.list.entries.ace.matches.ace.type.AceIp;
+import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.access.control.list.rev160218.access.lists.acl.access.list.entries.ace.matches.ace.type.ace.ip.AceIpVersion;
+import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.access.control.list.rev160218.access.lists.acl.access.list.entries.ace.matches.ace.type.ace.ip.ace.ip.version.AceIpv4;
+import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.Ipv4Prefix;
+import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.packet.fields.rev160218.acl.transport.header.fields.DestinationPortRange;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.faas.device.ce.rev160615.grp.ce.tp.Neighbor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -120,6 +133,92 @@ public class CETelnetOperator implements AutoCloseable {
     }
 
     /**
+     * Configure acl rules
+     * @param aclNum
+     * @param rules
+     * @param denyDefault
+     */
+    public void configACL(int aclNum, List<Ace> rules, boolean denyDefault) {
+        List<String> cmds = Lists.newArrayList();
+        cmds.add(String.format("acl %d", aclNum));
+        for (Ace ace : rules) {
+            PacketHandling action = ace.getActions().getPacketHandling();
+            if (action instanceof Deny) {
+                if (denyDefault) {
+                    continue;
+                }
+            } else if (action instanceof Permit) {
+                if (!denyDefault) {
+                    continue;
+                }
+            } else {
+                LOG.warn("not supported action : " + action.toString());
+                continue;
+            }
+            AceType aceType = ace.getMatches().getAceType();
+            if (aceType instanceof AceIp) {
+                AceIp aceIp = (AceIp) aceType;
+                DestinationPortRange portRange = aceIp.getDestinationPortRange();
+                AceIpVersion aceIpVer = aceIp.getAceIpVersion();
+                if (aceIpVer instanceof AceIpv4) {
+                    Ipv4Prefix destIp = ((AceIpv4) aceIpVer).getDestinationIpv4Network();
+
+                    cmds.add(convAce2Cmd(aceIp.getProtocol(), action, portRange, destIp));
+                }
+            }
+        }
+
+        this.checkConnection();
+        stat.systemView();
+
+        for (String cmd : cmds) {
+            write(cmd);
+            readUntil(promptCharSys);
+        }
+
+        this.checkConnection();
+        stat.systemView();
+    }
+
+    private String convAce2Cmd(short protocol, PacketHandling action, DestinationPortRange portRange, Ipv4Prefix destIp ) {
+        String[] ipv4 = destIp.getValue().split("/");
+        int lowerport = portRange.getLowerPort().getValue();
+        int upperport = -1;
+            if (portRange.getUpperPort() != null) {
+                upperport = portRange.getUpperPort().getValue();
+            }
+
+        switch (protocol) {
+            case 1: //ICMP
+                return String.format("rule %s icmp destination %s %s", action.toString(), ipv4[0], ipv4[1]);
+            case 6: //TCP
+                if (lowerport == upperport) {
+                    return String.format("rule %s tcp destination %s %s destination-port eq %d",
+                            action.toString(), ipv4[0], ipv4[1], lowerport);
+                } else if (upperport == -1){
+                    return String.format("rule %s tcp destination %s %s destination-port gt %d",
+                            action.toString(), ipv4[0], ipv4[1], lowerport);
+                } else {
+                    return String.format("rule %s tcp destination %s %s destination-port range %d %d",
+                            action.toString(), ipv4[0], ipv4[1], lowerport, upperport);
+                }
+            case 17: //UDP
+                if (lowerport == upperport) {
+                    return String.format("rule %s udp destination %s %s destination-port eq %d",
+                            action.toString(), ipv4[0], ipv4[1], lowerport);
+                } else if (upperport == -1){
+                    return String.format("rule %s udp destination %s %s destination-port gt %d",
+                            action.toString(), ipv4[0], ipv4[1], lowerport);
+                } else {
+                    return String.format("rule %s udp destination %s %s destination-port range %d %d",
+                            action.toString(), ipv4[0], ipv4[1], lowerport, upperport);
+                }
+            default: //IP
+                return String.format("rule %s ip destination %s %s", action.toString(), ipv4[0], ipv4[1]);
+        }
+    }
+
+    /**
      * Configure vrf on CE Device.<br>
      * for CE device, vrf is vpn-instance
      * @param vrfCtx vrf Tag
@@ -155,6 +254,50 @@ public class CETelnetOperator implements AutoCloseable {
                 String.format("port default vlan %d", interVlan)
         };
 
+
+        this.checkConnection();
+        stat.systemView();
+
+        for (String cmd : cmds) {
+            write(cmd);
+            readUntil(promptCharSys);
+        }
+
+        stat.userView();
+    }
+
+    /**
+     * configure interface to enable acl
+     * @param portName name of port
+     * @param aclNum acl number to configure
+     */
+    public void configInterfaceAcl(String portName, int aclNum) {
+        String[] cmds = new String[] {
+                String.format("interface %s", portName),
+                String.format("traffic-filter acl %d outbound", aclNum)
+        };
+
+        this.checkConnection();
+        stat.systemView();
+
+        for (String cmd : cmds) {
+            write(cmd);
+            readUntil(promptCharSys);
+        }
+
+        stat.userView();
+    }
+
+    /**
+     * configure interface to disable acl
+     * @param portName name of port
+     * @param aclNum acl number to configure
+     */
+    public void clearInterfaceAcl(String portName, int aclNum) {
+        String[] cmds = new String[] {
+                String.format("interface %s", portName),
+                String.format("undo traffic-filter acl %d outbound", aclNum)
+        };
 
         this.checkConnection();
         stat.systemView();
