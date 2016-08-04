@@ -53,6 +53,10 @@ public class DeviceContext {
         this.trafficBehavior = newBehavior;
     }
 
+    public boolean isDenyDefault() {
+        return trafficBehavior.equals(TrafficBehavior.PolicyDriven);
+    }
+
     public TrafficBehavior getTrafficBehavior() {
         return trafficBehavior;
     }

@@ -16,8 +16,8 @@ public class ConfigVlanIf extends AbstractTask {
     int mask;
     int vrfCtx;
 
-    public ConfigVlanIf(int vlan, int vrfCtx, IpAddress ip, int mask, boolean isDelete) {
-        super(isDelete);
+    public ConfigVlanIf(int vlan, int vrfCtx, IpAddress ip, int mask) {
+        super(false);
         this.vlan = vlan;
         this.ip = ip;
         this.mask = mask;

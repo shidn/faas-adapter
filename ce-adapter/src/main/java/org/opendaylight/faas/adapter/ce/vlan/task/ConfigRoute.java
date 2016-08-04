@@ -21,14 +21,14 @@ public class ConfigRoute extends AbstractTask {
 
     private List<Route> routes = Lists.newArrayList();
 
-    public ConfigRoute(int vrfCtx, boolean isDelete) {
-        super(isDelete);
+    public ConfigRoute(int vrfCtx, boolean isUndo) {
+        super(isUndo);
         this.vrfCtx = vrfCtx;
     }
 
     @Override
     void run() {
-        if (isDelete()) {
+        if (isUndo()) {
             if (routes.isEmpty()) {
                 getOperator().clearStaticRoute(vrfCtx);
             } else {

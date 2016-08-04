@@ -7,24 +7,17 @@
  */
 package org.opendaylight.faas.adapter.ce.vlan.task;
 
-import com.google.common.collect.Lists;
+public class UndoConfigVlanIf extends AbstractTask {
 
-public class ConfigVrf extends AbstractTask {
+    int vlan;
 
-    int vrfCtx;
-
-    public ConfigVrf(int vrfCtx, boolean isUndo) {
-        super(isUndo);
-        this.vrfCtx = vrfCtx;
+    public UndoConfigVlanIf(int vlan) {
+        super(true);
+        this.vlan = vlan;
     }
 
     @Override
     void run() {
-        if (isUndo()) {
-            getOperator().rmVrfs(Lists.newArrayList("tenant" + vrfCtx));
-        } else {
-            getOperator().configVrf(vrfCtx);
-        }
+        this.getOperator().deleteGatewayPort(vlan);
     }
-
 }

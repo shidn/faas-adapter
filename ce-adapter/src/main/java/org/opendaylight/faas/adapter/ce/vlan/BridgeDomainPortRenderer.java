@@ -7,13 +7,22 @@
  */
 package org.opendaylight.faas.adapter.ce.vlan;
 
-import java.util.Collection;
+import com.google.common.collect.Sets;
 
+import java.util.Collection;
+import java.util.Set;
+
+import org.opendaylight.controller.md.sal.binding.api.DataBroker;
 import org.opendaylight.controller.md.sal.binding.api.DataObjectModification;
 import org.opendaylight.controller.md.sal.binding.api.DataTreeChangeListener;
 import org.opendaylight.controller.md.sal.binding.api.DataTreeModification;
+import org.opendaylight.faas.adapter.ce.vlan.task.ConfigAcl;
+import org.opendaylight.faas.adapter.ce.vlan.task.ConfigAclDenyAll;
 import org.opendaylight.faas.adapter.ce.vlan.task.ConfigPortVlan;
+import org.opendaylight.faas.adapter.ce.vlan.task.UndoConfigAcl;
+import org.opendaylight.faas.adapter.ce.vlan.task.UndoConfigVlanIf;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.faas.fabric.capable.device.rev150930.fabric.capable.device.config.BdPort;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.faas.fabric.capable.device.rev150930.fabric.capable.device.config.Bdif;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.faas.fabric.type.rev150930.acl.list.FabricAcl;
 import org.opendaylight.yangtools.yang.binding.DataObject;
 import org.slf4j.Logger;
@@ -25,10 +34,12 @@ public class BridgeDomainPortRenderer implements DataTreeChangeListener<BdPort> 
 
     private String device;
     private DeviceContext ctx;
+    private DataBroker databorker;
 
-    public BridgeDomainPortRenderer(DeviceContext ctx) {
+    public BridgeDomainPortRenderer(DeviceContext ctx, DataBroker databroker) {
         this.device = ctx.getBridgeName();
         this.ctx = ctx;
+        this.databorker = databroker;
     }
 
     @Override
@@ -37,7 +48,21 @@ public class BridgeDomainPortRenderer implements DataTreeChangeListener<BdPort> 
             switch (change.getRootNode().getModificationType()) {
                 case DELETE: {
                     BdPort oldport = change.getRootNode().getDataBefore();
+                    if (oldport.getFabricAcl() != null && !oldport.getFabricAcl().isEmpty()) {
+                        Set<String> aclNames = Sets.newHashSet();
+                        for (FabricAcl acl : oldport.getFabricAcl()) {
+                            aclNames.add(acl.getFabricAclName());
+                        }
+                        ConfigAcl acltask = new UndoConfigAcl(aclNames, oldport.getRefTpId().getValue());
+                        CETelnetExecutor.getInstance().addTask(device, acltask);
+                    }
 
+                    ConfigPortVlan task = new ConfigPortVlan(oldport.getRefTpId().getValue(), true);
+                    task.setAccessType(oldport.getAccessType());
+                    task.setAccessSegment(oldport.getAccessTag());
+                    task.setVlan(ctx.getVlanOfBd(oldport.getBdid()));
+
+                    CETelnetExecutor.getInstance().addTask(device, task);
                     break;
                 }
                 case WRITE: {
@@ -49,22 +74,36 @@ public class BridgeDomainPortRenderer implements DataTreeChangeListener<BdPort> 
                     task.setVlan(ctx.getVlanOfBd(newPort.getBdid()));
 
                     CETelnetExecutor.getInstance().addTask(device, task);
+
+                    if (newPort.getFabricAcl() != null && !newPort.getFabricAcl().isEmpty()) {
+                        Set<String> aclNames = Sets.newHashSet();
+                        for (FabricAcl acl : newPort.getFabricAcl()) {
+                            aclNames.add(acl.getFabricAclName());
+                        }
+                        ConfigAcl acltask = new ConfigAcl(aclNames, newPort.getRefTpId().getValue(), ctx.isDenyDefault(), this.databorker);
+                        CETelnetExecutor.getInstance().addTask(device, acltask);
+                    } else if (ctx.isDenyDefault()) {
+//                        ConfigAclDenyAll acltask = new ConfigAclDenyAll(newPort.getRefTpId().getValue());
+//                        CETelnetExecutor.getInstance().addTask(device, acltask);
+                    }
                     break;
                 }
                 case SUBTREE_MODIFIED: {
                     final BdPort newPort = change.getRootNode().getDataAfter();
                     Collection<DataObjectModification<? extends DataObject>> subChanges = change.getRootNode().getModifiedChildren();
+                    boolean aclChanged = false;
                     for (DataObjectModification<? extends DataObject> subChange : subChanges) {
                         if (subChange.getDataType().equals(FabricAcl.class)) {
-                            switch(subChange.getModificationType()) {
-                                case WRITE:
-                                    break;
-                                case DELETE:
-                                    break;
-                                default:
-                                    break;
-                            }
+                            aclChanged = true;
                         }
+                    }
+                    if (aclChanged) {
+                        Set<String> aclNames = Sets.newHashSet();
+                        for (FabricAcl acl : newPort.getFabricAcl()) {
+                            aclNames.add(acl.getFabricAclName());
+                        }
+                        ConfigAcl task = new ConfigAcl(aclNames, newPort.getRefTpId().getValue(), ctx.isDenyDefault(), this.databorker);
+                        CETelnetExecutor.getInstance().addTask(device, task);
                     }
                     break;
                 }

@@ -65,7 +65,7 @@ public class DeviceRenderer implements AutoCloseable {
                 iid.augmentation(FabricCapableDevice.class).child(Config.class).child(BridgeDomain.class));
         bridgeDomainListener = databroker.registerDataTreeChangeListener(bdDtid, bdRenderer);
 
-        BridgeDomainPortRenderer bdPortRenderer = new BridgeDomainPortRenderer(ctx);
+        BridgeDomainPortRenderer bdPortRenderer = new BridgeDomainPortRenderer(ctx, databroker);
         DataTreeIdentifier<BdPort> bdPortDtid = new DataTreeIdentifier<BdPort>(LogicalDatastoreType.OPERATIONAL,
                 iid.augmentation(FabricCapableDevice.class).child(Config.class).child(BdPort.class));
         bdPortListener = databroker.registerDataTreeChangeListener(bdPortDtid, bdPortRenderer);

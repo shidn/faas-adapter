@@ -41,26 +41,24 @@ public class ConfigAcl extends AbstractTask {
 
     private static final Logger LOG = LoggerFactory.getLogger(ConfigAcl.class);
 
-    private Set<String> aclNames;
+    protected Set<String> aclNames;
 
-    private String portName;
+    protected String portName;
 
-    private final DataBroker databroker;
+    protected final DataBroker databroker;
 
-    private final boolean policyDriven;
+    protected final boolean policyDriven;
 
-    private static int nextAclNum = 3000;
-
-    private static final int AclNumDenyAll = 3000;
+    private static int nextAclNum = 3001;
 
     /* key : acl nubmer, value : port names */
-    private static Map<Integer, Set<String>> aclUsed = Maps.newHashMap();
+    protected static Map<Integer, Set<String>> aclUsed = Maps.newHashMap();
 
     /* key : port name, value : acl number */
-    private static Map<String, Integer> portAcl = Maps.newHashMap();
+    protected static Map<String, Integer> portAcl = Maps.newHashMap();
 
     /* key : aclnames, value : acl number */
-    private static Map<Set<String>, Integer> acls = Maps.newHashMap();
+    protected static Map<Set<String>, Integer> acls = Maps.newHashMap();
 
     private static final Ace DenyAll = new AceBuilder()
             .setMatches(new MatchesBuilder()

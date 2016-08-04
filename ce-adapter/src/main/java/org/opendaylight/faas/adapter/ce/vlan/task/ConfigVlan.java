@@ -11,14 +11,14 @@ public class ConfigVlan extends AbstractTask {
 
     int vlan;
 
-    public ConfigVlan(int vlan, boolean isDelete) {
-        super(isDelete);
+    public ConfigVlan(int vlan, boolean isUndo) {
+        super(isUndo);
         this.vlan = vlan;
     }
 
     @Override
     void run() {
-        this.getOperator().configVlan(vlan);
+        this.getOperator().configVlan(vlan, isUndo());
     }
 
 }

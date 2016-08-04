@@ -72,11 +72,14 @@ UUID_EP4 = '4bc83eb7-4147-435c-8e0f-a546288fd639'
 def rpc_compose_fabric_uri():
     return "/restconf/operations/fabric:compose-fabric"
 
-def rpc_compose_fabric_data():
+def rpc_compose_fabric_data(behavior):
     return {
       "input" : {
            "name": "first fabric",
            "type":"VLAN",
+           "options":{
+               "traffic-behavior":behavior
+           },
            "device-nodes" : [
              {
                 "device-ref":"/network-topology:network-topology/network-topology:topology[network-topology:topology-id='CE']/network-topology:node[network-topology:node-id='192.168.1.141']",
@@ -328,12 +331,17 @@ if __name__ == "__main__":
 
 
     # Some sensible defaults
+    behavior = "policy-driven"
+    if len(sys.argv) > 1:
+        if sys.argv[1] == "normal":
+            behavior = "normal"
+
     controller = os.environ.get('ODL')
     if controller == None:
         sys.exit("No controller set.")
 
     print "compose fabric"
-    post(controller, DEFAULT_PORT, rpc_compose_fabric_uri(), rpc_compose_fabric_data(), True)
+    post(controller, DEFAULT_PORT, rpc_compose_fabric_uri(), rpc_compose_fabric_data(behavior), True)
 
     print "create_logic_switch ..."
     pause()

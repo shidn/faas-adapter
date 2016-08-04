@@ -15,12 +15,12 @@ public abstract class AbstractTask implements Callable<Void> {
 
     private CETelnetOperator oper;
 
-    private boolean isDelete;
+    private boolean isUndo;
 
     abstract void run();
 
-    AbstractTask(boolean isDelete) {
-        this.isDelete = isDelete;
+    AbstractTask(boolean isUndo) {
+        this.isUndo = isUndo;
     }
 
     @Override
@@ -37,7 +37,7 @@ public abstract class AbstractTask implements Callable<Void> {
         return this.oper;
     }
 
-    boolean isDelete() {
-        return this.isDelete;
+    boolean isUndo() {
+        return this.isUndo;
     }
 }

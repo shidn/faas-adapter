@@ -36,6 +36,10 @@ public class BridgeDomainRenderer implements DataTreeChangeListener<BridgeDomain
                 case DELETE: {
                     BridgeDomain oldBd = change.getRootNode().getDataBefore();
                     ctx.rmBd(oldBd.getId());
+
+                    ConfigVlan task = new ConfigVlan(oldBd.getSegment().intValue(), true);
+                    CETelnetExecutor.getInstance().addTask(device, task);
+
                     break;
                 }
                 case WRITE: {

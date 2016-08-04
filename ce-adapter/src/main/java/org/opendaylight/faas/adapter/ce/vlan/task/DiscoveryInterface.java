@@ -59,6 +59,10 @@ public class DiscoveryInterface extends AbstractTask {
 
         List<TerminationPoint> tps = Lists.newArrayList();
         for (String ifname : interfaces) {
+            if (ifname.startsWith("V") || ifname.startsWith("T")) {
+                // do not save Vlanif and Tunnel interface
+                continue;
+            }
             TerminationPointBuilder builder = new TerminationPointBuilder();
             builder.setTpId(new TpId(ifname));
 
@@ -81,6 +85,8 @@ public class DiscoveryInterface extends AbstractTask {
 
             List<String> vpnInsts = getOperator().getVpnInstances();
             getOperator().rmVrfs(vpnInsts);
+
+            getOperator().undoAllAcl();
         }
 
         configUNIInterface(neighbors.keySet());

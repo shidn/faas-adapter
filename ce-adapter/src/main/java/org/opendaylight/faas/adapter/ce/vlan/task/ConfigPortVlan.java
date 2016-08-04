@@ -18,8 +18,8 @@ public class ConfigPortVlan extends AbstractTask {
 
     private int vlan;
 
-    public ConfigPortVlan(String portName, boolean isDelete) {
-        super(isDelete);
+    public ConfigPortVlan(String portName, boolean isUndo) {
+        super(isUndo);
         this.portName = portName;
     }
 
@@ -38,9 +38,9 @@ public class ConfigPortVlan extends AbstractTask {
     @Override
     void run() {
         if (accessType.equals(AccessType.Exclusive)) {
-            this.getOperator().configAccessPort(portName, vlan);
+            this.getOperator().configAccessPort(portName, vlan, isUndo());
         } else {
-            this.getOperator().configTrunkPort(portName, vlan, (int) accessSeg);
+            this.getOperator().configTrunkPort(portName, vlan, (int) accessSeg, isUndo());
         }
     }
 

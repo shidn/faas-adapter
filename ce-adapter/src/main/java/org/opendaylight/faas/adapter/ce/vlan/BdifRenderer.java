@@ -17,7 +17,10 @@ import org.opendaylight.controller.md.sal.binding.api.DataObjectModification;
 import org.opendaylight.controller.md.sal.binding.api.DataTreeChangeListener;
 import org.opendaylight.controller.md.sal.binding.api.DataTreeModification;
 import org.opendaylight.faas.adapter.ce.vlan.task.ConfigAcl;
+import org.opendaylight.faas.adapter.ce.vlan.task.ConfigAclDenyAll;
 import org.opendaylight.faas.adapter.ce.vlan.task.ConfigVlanIf;
+import org.opendaylight.faas.adapter.ce.vlan.task.UndoConfigAcl;
+import org.opendaylight.faas.adapter.ce.vlan.task.UndoConfigVlanIf;
 import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.IpAddress;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.faas.fabric.capable.device.rev150930.fabric.capable.device.config.Bdif;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.faas.fabric.type.rev150930.acl.list.FabricAcl;
@@ -44,6 +47,18 @@ public class BdifRenderer implements DataTreeChangeListener<Bdif> {
         for (DataTreeModification<Bdif> change : changes) {
             switch (change.getRootNode().getModificationType()) {
                 case DELETE: {
+                    Bdif bdif = change.getRootNode().getDataBefore();
+                    if (bdif.getFabricAcl() != null && !bdif.getFabricAcl().isEmpty()) {
+                        Set<String> aclNames = Sets.newHashSet();
+                        for (FabricAcl acl : bdif.getFabricAcl()) {
+                            aclNames.add(acl.getFabricAclName());
+                        }
+                        ConfigAcl acltask = new UndoConfigAcl(aclNames, getVlanIfName(ctx.getVlanOfBd(bdif.getBdid())));
+                        CETelnetExecutor.getInstance().addTask(device, acltask);
+                    }
+
+                    UndoConfigVlanIf task = new UndoConfigVlanIf(ctx.getVlanOfBd(bdif.getBdid()));
+                    CETelnetExecutor.getInstance().addTask(device, task);
                     break;
                 }
                 case WRITE: {
@@ -52,8 +67,20 @@ public class BdifRenderer implements DataTreeChangeListener<Bdif> {
                     IpAddress ip = bdif.getIpAddress();
                     int mask = bdif.getMask();
 
-                    ConfigVlanIf task = new ConfigVlanIf(ctx.getVlanOfBd(bdif.getBdid()), vrfCtx, ip, mask, false);
+                    ConfigVlanIf task = new ConfigVlanIf(ctx.getVlanOfBd(bdif.getBdid()), vrfCtx, ip, mask);
                     CETelnetExecutor.getInstance().addTask(device, task);
+
+                    if (bdif.getFabricAcl() != null && !bdif.getFabricAcl().isEmpty()) {
+                        Set<String> aclNames = Sets.newHashSet();
+                        for (FabricAcl acl : bdif.getFabricAcl()) {
+                            aclNames.add(acl.getFabricAclName());
+                        }
+                        ConfigAcl acltask = new ConfigAcl(aclNames, getVlanIfName(ctx.getVlanOfBd(bdif.getBdid())), ctx.isDenyDefault(), this.databorker);
+                        CETelnetExecutor.getInstance().addTask(device, acltask);
+                    } else if (ctx.isDenyDefault()) {
+                        ConfigAclDenyAll acltask = new ConfigAclDenyAll(getVlanIfName(ctx.getVlanOfBd(bdif.getBdid())));
+                        CETelnetExecutor.getInstance().addTask(device, acltask);
+                    }
                     break;
                 }
                 case SUBTREE_MODIFIED: {
@@ -70,7 +97,7 @@ public class BdifRenderer implements DataTreeChangeListener<Bdif> {
                         for (FabricAcl acl : bdif.getFabricAcl()) {
                             aclNames.add(acl.getFabricAclName());
                         }
-                        ConfigAcl task = new ConfigAcl(aclNames, getVlanIfName(ctx.getVlanOfBd(bdif.getBdid())), false, this.databorker);
+                        ConfigAcl task = new ConfigAcl(aclNames, getVlanIfName(ctx.getVlanOfBd(bdif.getBdid())), ctx.isDenyDefault(), this.databorker);
                         CETelnetExecutor.getInstance().addTask(device, task);
                     }
                     break;

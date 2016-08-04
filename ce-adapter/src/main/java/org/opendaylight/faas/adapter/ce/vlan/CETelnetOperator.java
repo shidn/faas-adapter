@@ -21,7 +21,6 @@ import org.apache.commons.net.telnet.TelnetClient;
 import org.opendaylight.faas.adapter.ce.vlan.telnet.InterfaceParser;
 import org.opendaylight.faas.adapter.ce.vlan.telnet.LldpNeighborParser;
 import org.opendaylight.faas.adapter.ce.vlan.telnet.VpnInstanceParser;
-import org.opendaylight.faas.fabric.utils.IpAddressUtils;
 import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.access.control.list.rev160218.access.lists.acl.access.list.entries.Ace;
 import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.access.control.list.rev160218.access.lists.acl.access.list.entries.ace.actions.PacketHandling;
 import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.access.control.list.rev160218.access.lists.acl.access.list.entries.ace.actions.packet.handling.Deny;
@@ -120,8 +119,8 @@ public class CETelnetOperator implements AutoCloseable {
      * Configure vlan on CE Device.
      * @param vlan Vlan Tag
      */
-    public void configVlan(int vlan) {
-        String cmd = String.format("vlan %d", vlan);
+    public void configVlan(int vlan, boolean undo) {
+        String cmd = String.format("%s vlan %d", (undo ? "undo" : ""), vlan);
 
         this.checkConnection();
         stat.systemView();
@@ -167,6 +166,9 @@ public class CETelnetOperator implements AutoCloseable {
                 }
             }
         }
+        if (denyDefault) {
+            cmds.add("rule deny ip");
+        }
 
         this.checkConnection();
         stat.systemView();
@@ -176,11 +178,16 @@ public class CETelnetOperator implements AutoCloseable {
             readUntil(promptCharSys);
         }
 
-        this.checkConnection();
-        stat.systemView();
+        stat.userView();
     }
 
     private String convAce2Cmd(short protocol, PacketHandling action, DestinationPortRange portRange, Ipv4Prefix destIp ) {
+        String actStr = "";
+        if (action instanceof Permit) {
+            actStr = "permit";
+        } else if (action instanceof Deny) {
+            actStr = "deny";
+        }
         String[] ipv4 = destIp.getValue().split("/");
         int lowerport = portRange.getLowerPort().getValue();
         int upperport = -1;
@@ -190,32 +197,44 @@ public class CETelnetOperator implements AutoCloseable {
 
         switch (protocol) {
             case 1: //ICMP
-                return String.format("rule %s icmp destination %s %s", action.toString(), ipv4[0], ipv4[1]);
+                return String.format("rule %s icmp destination %s %s", actStr, ipv4[0], ipv4[1]);
             case 6: //TCP
                 if (lowerport == upperport) {
                     return String.format("rule %s tcp destination %s %s destination-port eq %d",
-                            action.toString(), ipv4[0], ipv4[1], lowerport);
+                            actStr, ipv4[0], ipv4[1], lowerport);
                 } else if (upperport == -1){
                     return String.format("rule %s tcp destination %s %s destination-port gt %d",
-                            action.toString(), ipv4[0], ipv4[1], lowerport);
+                            actStr, ipv4[0], ipv4[1], lowerport);
                 } else {
                     return String.format("rule %s tcp destination %s %s destination-port range %d %d",
-                            action.toString(), ipv4[0], ipv4[1], lowerport, upperport);
+                            actStr, ipv4[0], ipv4[1], lowerport, upperport);
                 }
             case 17: //UDP
                 if (lowerport == upperport) {
                     return String.format("rule %s udp destination %s %s destination-port eq %d",
-                            action.toString(), ipv4[0], ipv4[1], lowerport);
+                            actStr, ipv4[0], ipv4[1], lowerport);
                 } else if (upperport == -1){
                     return String.format("rule %s udp destination %s %s destination-port gt %d",
-                            action.toString(), ipv4[0], ipv4[1], lowerport);
+                            actStr, ipv4[0], ipv4[1], lowerport);
                 } else {
                     return String.format("rule %s udp destination %s %s destination-port range %d %d",
-                            action.toString(), ipv4[0], ipv4[1], lowerport, upperport);
+                            actStr, ipv4[0], ipv4[1], lowerport, upperport);
                 }
             default: //IP
-                return String.format("rule %s ip destination %s %s", action.toString(), ipv4[0], ipv4[1]);
+                return String.format("rule %s ip destination %s %s", actStr, ipv4[0], ipv4[1]);
         }
+    }
+
+    public void undoAllAcl() {
+        this.checkConnection();
+        stat.systemView();
+
+        write("undo acl all");
+        readUntil(promptCharSys);
+        write("Y");
+        readUntil(promptCharSys);
+
+        stat.userView();
     }
 
     /**
@@ -247,11 +266,11 @@ public class CETelnetOperator implements AutoCloseable {
      * @param portName name of port
      * @param interVlan vlan of port
      */
-    public void configAccessPort(String portName, int interVlan) {
+    public void configAccessPort(String portName, int interVlan, boolean undo) {
         String[] cmds = new String[] {
                 String.format("interface %s", portName),
                 String.format("port link-type access"),
-                String.format("port default vlan %d", interVlan)
+                undo ? "undo port default vlan" : String.format("port default vlan %d", interVlan)
         };
 
 
@@ -316,12 +335,12 @@ public class CETelnetOperator implements AutoCloseable {
     * @param interVlan vlan of port
     * @param outerVlan outer vlan of port
     */
-    public void configTrunkPort(String portName, int interVlan, int outerVlan) {
+    public void configTrunkPort(String portName, int interVlan, int outerVlan, boolean undo) {
         String[] cmds = new String[] {
                 String.format("interface %s", portName),
                 String.format("port link-type trunk"),
-                String.format("port trunk allow-pass vlan %d", interVlan),
-                String.format("port vlan-mapping vlan %d map-vlan %d", outerVlan, interVlan)
+                String.format("%s port trunk allow-pass vlan %d", undo ? "undo" : "", interVlan),
+                String.format("%s port vlan-mapping vlan %d map-vlan %d", undo ? "undo" : "", outerVlan, interVlan)
         };
 
         this.checkConnection();
@@ -383,11 +402,9 @@ public class CETelnetOperator implements AutoCloseable {
         stat.userView();
     }
 
-    public void deleteGatewayPort(int vrfCtx, int vlan) {
+    public void deleteGatewayPort(int vlan) {
         String[] cmds = new String[] {
-                String.format("interface Vlanif%d", vlan),
-                String.format("undo ip binding vpn-instance tenant%d", vrfCtx),
-                String.format("undo ip address ")
+                String.format("undo interface Vlanif %d", vlan)
         };
 
         this.checkConnection();
@@ -481,10 +498,15 @@ public class CETelnetOperator implements AutoCloseable {
        stat.systemView();
 
        for (String port : portNames) {
-           write(String.format(cmd, port));
-           readUntil(promptCharSys);
-           write("Y");
-           readUntil(promptCharSys);
+           if (port.startsWith("V")) {
+               write("undo interface " + port);
+               readUntil(promptCharSys);
+           } else {
+               write(String.format(cmd, port));
+               readUntil(promptCharSys);
+               write("Y");
+               readUntil(promptCharSys);
+           }
        }
        stat.userView();
    }
@@ -589,6 +611,17 @@ public class CETelnetOperator implements AutoCloseable {
     }
 
     private void checkConnection() {
+        try {
+            if (in.available() >= 0) {
+                return;
+            }
+            if (!telnet.isAvailable()) {
+                this.reconnect();
+            }
+        } catch (IOException e) {
+            LOG.error(devIp, e);
+            this.reconnect();
+        }
     }
 
     private class TelnetStat {

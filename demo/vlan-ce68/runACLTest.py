@@ -73,15 +73,15 @@ def get_acl_data():
     "ietf-access-control-list:access-lists": {
         "acl": [
             {
-            "acl-name":"acl-icmp-deny",
+            "acl-name":"acl-icmp-permit",
             "acl-type":"ipv4-acl",
             "access-list-entries":{
                 "ace" :[
                     {
-                    "rule-name":"rule-icmp-deny",
+                    "rule-name":"rule-icmp-permit",
                     "matches":{
-                        "destination-ipv4-network":"172.16.1.0/24",
-                        "source-ipv4-network":"172.16.2.0/24",
+                        "destination-ipv4-network":"172.16.0.0/16",
+                        "source-ipv4-network":"172.16.0.0/16",
                         "source-port-range":{
                             "lower-port":1,
                             },
@@ -91,7 +91,7 @@ def get_acl_data():
                         "protocol":1
                         },
                         "actions": {
-                            "deny" : "true"
+                            "permit" : "true"
                         }
                     }
                 ]}
@@ -121,28 +121,28 @@ def get_acl_data():
                 ]}
             },
             {
-            "acl-name":"acl-eth-deny",
+            "acl-name":"acl-eth-permit",
             "acl-type":"ipv4-acl",
             "access-list-entries":{
                 "ace" :[
                     {
-                    "rule-name":"rule-eth-deny",
+                    "rule-name":"rule-eth-permit",
                     "matches":{
                         "destination-mac-address":"62:02:1a:00:b7:12",
                         },
                         "actions": {
-                            "deny" : "true"
+                            "permit" : "true"
                         }
                     }
                 ]}
             },
             {
-            "acl-name":"acl-tcp-deny",
+            "acl-name":"acl-tcp-permit",
             "acl-type":"ipv4-acl",
             "access-list-entries":{
                 "ace" :[
                     {
-                    "rule-name":"rule-tcp-deny",
+                    "rule-name":"rule-tcp-permit",
                     "matches":{
                         "destination-ipv4-network":"172.16.1.0/24",
                         "source-ipv4-network":"172.16.2.0/24",
@@ -155,7 +155,7 @@ def get_acl_data():
                             },
                      },
                      "actions": {
-                            "deny" : "true"
+                            "permit" : "true"
                      }
                     }
                 ]}
@@ -202,22 +202,23 @@ if __name__ == "__main__":
     print "put ACL"
     put(controller, DEFAULT_PORT, get_acl_uri(), get_acl_data(), True)
 
-    print "add acl-icmp-deny ACL to Logic Switch"
+    print "add acl-icmp-permit ACL to Logic Switch"
     pause()
-    post(controller, DEFAULT_PORT, rpc_add_acl_uri(), rpc_add_switch_acl_data("vswitch-1", "acl-icmp-deny"), True)
+    post(controller, DEFAULT_PORT, rpc_add_acl_uri(), rpc_add_switch_acl_data("vswitch-1", "acl-icmp-permit"), True)
+    post(controller, DEFAULT_PORT, rpc_add_acl_uri(), rpc_add_switch_acl_data("vswitch-2", "acl-icmp-permit"), True)
 
-    print "add acl-tcp-deny to Logic Router"
+    print "add acl-tcp-permit to Logic Router"
     pause()
-    post(controller, DEFAULT_PORT, rpc_add_acl_uri(), rpc_add_switch_acl_data("vrouter-1", "acl-tcp-deny"), True)
+    post(controller, DEFAULT_PORT, rpc_add_acl_uri(), rpc_add_switch_acl_data("vrouter-1", "acl-tcp-permit"), True)
     
-    pause()
-    print "add acl-udp-permit ACL to Logic Port"
-    post(controller, DEFAULT_PORT, rpc_add_acl_uri(), rpc_add_port_acl_data("vswitch-1", "vswitch-1-p-1", "acl-udp-permit"), True)
+    #pause()
+    #print "add acl-udp-permit ACL to Logic Port"
+    #post(controller, DEFAULT_PORT, rpc_add_acl_uri(), rpc_add_port_acl_data("vswitch-1", "vswitch-1-p-1", "acl-udp-permit"), True)
 
     #pause()
-    #print "put acl-eth-deny ACL to Logic Switch"
-    #post(controller, DEFAULT_PORT, rpc_add_acl_uri(), rpc_add_switch_acl_data("vswitch-1", "acl-eth-deny"), True)
+    #print "put acl-eth-permit ACL to Logic Switch"
+    #post(controller, DEFAULT_PORT, rpc_add_acl_uri(), rpc_add_switch_acl_data("vswitch-1", "acl-eth-permit"), True)
 
     #pause()
-    #print "put acl-tcp-deny ACL to Logic Switch"
-    #post(controller, DEFAULT_PORT, rpc_add_acl_uri(), rpc_add_switch_acl_data("vswitch-1", "acl-tcp-deny"), True)
+    #print "put acl-tcp-permit ACL to Logic Switch"
+    #post(controller, DEFAULT_PORT, rpc_add_acl_uri(), rpc_add_switch_acl_data("vswitch-1", "acl-tcp-permit"), True)
