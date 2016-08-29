@@ -58,7 +58,7 @@ def doCmd(cmd):
 
 def launch(sw, hosts, contIP='127.0.0.1'):
 
-    addManager(contIP)
+    #addManager(contIP)
     dpid=sw['dpid']
     addSwitch(sw['name'],dpid)
     setOFVersion(sw['name'])
@@ -103,7 +103,7 @@ def setupInterConnect(switches):
 # learning mac from arp request for spine device
 SPINE_ARP_LEARNING = "ovs-ofctl add-flow -OOpenFlow13 %s 'table=10, priority=1024, reg0=0x3, arp, arp_op=1 actions=learn(table=110,priority=1024,NXM_NX_TUN_ID[],NXM_OF_ETH_DST[]=NXM_OF_ETH_SRC[],load:NXM_OF_VLAN_TCI[]->NXM_OF_VLAN_TCI[],output:NXM_OF_IN_PORT[]),goto_table:20'"
 # learning mac from normal packets for spine device
-SPINE_NORMAL_LEARNING = "ovs-ofctl add-flow -OOpenFlow13 %s 'table=10, priority=1023, reg0=0x3, actions=learn(table=110,priority=1024,NXM_NX_TUN_ID[],NXM_OF_ETH_DST[]=NXM_OF_ETH_SRC[],load:NXM_OF_VLAN_TCI[]->NXM_OF_VLAN_TCI[],output:NXM_OF_IN_PORT[]),load:0->NXM_OF_VLAN_TCI[],goto_table:20'"
+SPINE_NORMAL_LEARNING = "ovs-ofctl add-flow -OOpenFlow13 %s 'table=10, priority=1023, reg0=0x3, vlan_tci=0x1000/0x1000, actions=learn(table=110,priority=1024,NXM_NX_TUN_ID[],NXM_OF_ETH_DST[]=NXM_OF_ETH_SRC[],load:NXM_OF_VLAN_TCI[]->NXM_OF_VLAN_TCI[],output:NXM_OF_IN_PORT[]),strip_vlan,goto_table:20'"
 # learning mac for leaf device
 LEAF_LEARNING = "ovs-ofctl add-flow -OOpenFlow13 %s 'table=10, priority=1024, reg0=0x2, actions=learn(table=110,priority=1024,NXM_NX_TUN_ID[],NXM_OF_ETH_DST[]=NXM_OF_ETH_SRC[],load:NXM_NX_TUN_IPV4_SRC[]->NXM_NX_TUN_IPV4_DST[],output:NXM_OF_IN_PORT[]),goto_table:20'"
 
@@ -181,9 +181,12 @@ if __name__ == "__main__" :
     hostname = socket.gethostname()
 
     localswitches = filter(lambda x : x['host'] == hostname, switches)
+    controller = os.environ.get('ODL')
+
+    if len(localswitches) > 0:
+        addManager(controller)
 
     for switch in localswitches:
-        controller = os.environ.get('ODL')
         sw_name = switch['name']
         launch(switch,hosts,controller)
 

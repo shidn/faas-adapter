@@ -22,13 +22,14 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       vm_ip = ips[n]
       vm_ip_intra = ips_intra[n]
       vm_index = n+1
-      compute.vm.box = "alagalah/gbpsfc-trusty64"
-      compute.vm.box_version = "1.0.1"
+#      compute.vm.box = "alagalah/gbpsfc-trusty64"
+      compute.vm.box = "shidn/faas-sfc"
+#      compute.vm.box_version = "1.0.1"
       compute.vm.hostname = "box#{vm_index}"
       compute.vm.network "private_network", ip: "#{vm_ip}"
       compute.vm.network "private_network", ip: "#{vm_ip_intra}"
       compute.vm.provider :virtualbox do |vb|
-        vb.memory = 512
+        vb.memory = 2048 
         vb.customize ["modifyvm", :id, "--ioapic", "on"]      
         vb.cpus = 1
       end

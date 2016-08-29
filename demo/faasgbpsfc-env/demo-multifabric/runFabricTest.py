@@ -186,7 +186,7 @@ def prepare_host_data():
             else:
                 portidx_of_lsw[fabricid, lsw] = 1
 
-            lport = lsw + '-p-' + str(portnum)
+            lport = lsw + ' - p-' + str(portnum)
             host['logical-port'] = lport
             host['physical-port'] = 'vethl-' + str(host['name'])
         else:
@@ -210,7 +210,7 @@ def prepare_host_data():
             else:
                 portidx_of_lsw[(fabricid, lsw)] = 1
             
-            lport = lsw + '-p-' + str(portnum)
+            lport = lsw + ' - p-' + str(portnum)
             host['logical-port'] = lport
             host['physical-port'] = 'vethl-' + str(host['name'])
 
@@ -244,7 +244,7 @@ def get_fabric_inter_connect_port():
             for f_link in topo_item['link']:
                 src_fabric = f_link['source']['source-node']
                 src_tp = f_link['source']['source-tp']
-                stmp = src_tp.split('-p-')
+                stmp = src_tp.split(' - p-')
                 dst_fabric = f_link['destination']['dest-node']
                 dst_tp = f_link['destination']['dest-tp']
                 fabric_link_ports[(src_fabric, dst_fabric)] = (stmp[0], 'p-' + stmp[1])

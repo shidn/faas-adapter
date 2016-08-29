@@ -76,9 +76,9 @@ def createFabricLink(leftsw, rightsw):
     request_data = {
       "input" : {
            "source-fabric": leftsw['fabricid'],
-           "source-fabric-port": leftsw['nodeid'] + '-' + "p-%s-to-%s" % (leftsw['name'], rightsw['name']),
+           "source-fabric-port": leftsw['nodeid'] + ' - ' + "p-%s-to-%s" % (leftsw['name'], rightsw['name']),
            "dest-fabric":rightsw['fabricid'],
-           "dest-fabric-port": rightsw['nodeid'] + '-' + "p-%s-to-%s" % (rightsw['name'], leftsw['name'])
+           "dest-fabric-port": rightsw['nodeid'] + ' - ' + "p-%s-to-%s" % (rightsw['name'], leftsw['name'])
        }
     }
     post(controller, DEFAULT_PORT, URI_ADD_FABRIC_LINK, request_data, True)
