@@ -58,7 +58,8 @@ def compose_fabric(fabric, behavior):
            "name": "first fabric",
            "type":"VXLAN",
            "options":{
-               "traffic-behavior":behavior
+               "traffic-behavior":behavior,
+               "capability-supported" : ['ip-mapping', 'acl-redirect']
            },
            "device-nodes" : devNodes
        }
