@@ -1,0 +1,26 @@
+From efde40a97096eeaddf174f1b0b28b8157f123d95 Mon Sep 17 00:00:00 2001
+From: Danian Shi <shidn@hotmail.com>
+Date: Fri, 2 Sep 2016 16:58:35 +0800
+Subject: [PATCH] Fix exception when using load:NXM_OF_VLAN_TCI in actions
+
+---
+ .../extension/vendor/nicira/convertor/action/RegMoveConvertor.java     | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/extension/openflowplugin-extension-nicira/src/main/java/org/opendaylight/openflowplugin/extension/vendor/nicira/convertor/action/RegMoveConvertor.java b/extension/openflowplugin-extension-nicira/src/main/java/org/opendaylight/openflowplugin/extension/vendor/nicira/convertor/action/RegMoveConvertor.java
+index e323af5..a87ae13 100644
+--- a/extension/openflowplugin-extension-nicira/src/main/java/org/opendaylight/openflowplugin/extension/vendor/nicira/convertor/action/RegMoveConvertor.java
++++ b/extension/openflowplugin-extension-nicira/src/main/java/org/opendaylight/openflowplugin/extension/vendor/nicira/convertor/action/RegMoveConvertor.java
+@@ -247,7 +247,8 @@ public class RegMoveConvertor implements
+             return new DstOfIcmpTypeCaseBuilder().setOfIcmpType(true).build();
+         }
+ 
+-        throw new CodecPreconditionException("Missing codec for " + new NxmHeader(dstValue));
++        return null;
++        //throw new CodecPreconditionException("Missing codec for " + new NxmHeader(dstValue));
+     }
+ 
+     static SrcChoice resolveSrc(long srcValue) {
+-- 
+1.9.1
+

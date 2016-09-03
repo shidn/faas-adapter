@@ -1,0 +1,5 @@
+
+Before start controller, there are some patch should be applied first.
+
+
+1. openflowplugin/0001-Fix-exception-when-using-load-NXM_OF_VLAN_TCI-in-act.patch
