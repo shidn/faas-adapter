@@ -6,7 +6,7 @@ from subprocess import call
 import time
 import sys
 import os
-from infrastructure_config import floating_ip_pool, floating_ip_gw_mac
+from infrastructure_config import floating_ip_pool, floating_ip_gw_mac, switches
 
 
 DEFAULT_PORT='8181'
@@ -79,7 +79,6 @@ def post(host, port, uri, data, debug=False):
 
 UUID_EXT_GW = '18221321-04b6-47e1-97c1-2c1e604058ab'
 
-NODE_ID_OVSDB = ''
 NODE_ID_F2_LR = ''
 
 def rpc_create_logic_switch_uri():
@@ -141,8 +140,8 @@ def rpc_reg_external_gw_ep_data(fabricid, epId, ipaddr, pDevice, pPort):
                 "tp-id":"lsw-external-p-1"
             },
            "location" : {
-                "node-ref": OVS_BR_P % (NODE_ID_OVSDB + "/bridge/" + pDevice),
-                "tp-ref": OVS_TP_P % (NODE_ID_OVSDB + "/bridge/" + pDevice, pPort),
+                "node-ref": OVS_BR_P % (dict_sw_node[pDevice]),
+                "tp-ref": OVS_TP_P % (dict_sw_node[pDevice], pPort),
                 "access-type":"exclusive"
            }
        }
@@ -262,14 +261,14 @@ if __name__ == "__main__":
         sys.exit("No controller set.")
 
     print "get ovsdb node-id"
+    dict_sw_node = {}
     ovsdb_topo = get(controller, DEFAULT_PORT,OPER_OVSDB_TOPO)["topology"]
     for topo_item in ovsdb_topo:
         if topo_item["node"] is not None:
             for ovsdb_node in topo_item["node"]:
-                if ovsdb_node.has_key("ovsdb:ovs-version"):
-                    #uuid_ovsdb = ovsdb_node["node-id"][13:]
-                    NODE_ID_OVSDB = ovsdb_node["node-id"]
-                    print NODE_ID_OVSDB
+                if ovsdb_node.has_key("ovsdb:bridge-name"):
+                        switchname = ovsdb_node["ovsdb:bridge-name"]
+                        dict_sw_node[switchname] = ovsdb_node["node-id"]
 
     print "get logical router node-id on fabric:2"
     ovsdb_topo = get(controller, DEFAULT_PORT,OPER_FABRIC2_TOPO)["topology"]
@@ -291,7 +290,7 @@ if __name__ == "__main__":
     # create logical port
     post(controller, DEFAULT_PORT, rpc_create_logic_port_uri(), rpc_create_logic_port_data("fabric:2", "lsw-external", "lsw-external-p-1"), True)
     # register external gateway endpoint
-    post(controller, DEFAULT_PORT, rpc_register_endpoint_uri(), rpc_reg_external_gw_ep_data("fabric:2", UUID_EXT_GW, "192.168.1.1", "sw2", "sw2-eth2"), True)
+    post(controller, DEFAULT_PORT, rpc_register_endpoint_uri(), rpc_reg_external_gw_ep_data("fabric:2", UUID_EXT_GW, "192.168.1.1", "sw2", "p-sw2-to-sw3"), True)
     # create outgoing logical port
     post(controller, DEFAULT_PORT, rpc_create_gateway_uri(), rpc_create_gateway_data("fabric:2", "192.168.1.254", "192.168.1.0/24", "lsw-external"), True)
     # add default routing

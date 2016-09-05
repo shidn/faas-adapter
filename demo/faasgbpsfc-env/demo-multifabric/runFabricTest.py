@@ -479,7 +479,7 @@ if __name__ == "__main__":
     for (k,v) in  inter_conn_gw_dict.items():
         for fabricid in fabrics:
             if fabricid != k:
-                targetHosts = filter(lambda x: x['fabricid'] == fabricid, hosts)
+                targetHosts = filter(lambda x: x['fabricid'] == k, hosts)
                 add_routes(fabricid, targetHosts, v['ip'], inter_conn_gw_dict[fabricid]['ip'])
        
     
@@ -492,7 +492,7 @@ if __name__ == "__main__":
     # create logical port
     create_logic_port("fabric:2", "lsw-external", "lsw-external-p-1")
     # register external gateway endpoint
-    post(controller, DEFAULT_PORT, URI_REG_ENDPOINT, rpc_reg_external_gw_ep_data("fabric:2", UUID_EXT_GW, "192.168.1.1", "sw2", "p-s22-to-sw3"), True)
+    post(controller, DEFAULT_PORT, URI_REG_ENDPOINT, rpc_reg_external_gw_ep_data("fabric:2", UUID_EXT_GW, "192.168.1.1", "sw2", "p-sw2-to-sw3"), True)
     # create outgoing logical port
     create_gateway("fabric:2", "192.168.1.0", "192.168.1.0/24", "lsw-external")
     # add default routing

@@ -4,8 +4,9 @@ VAGRANTFILE_API_VERSION = "2"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   odl=ENV['ODL']
-  config.ssh.username = 'vagrant'
-  config.ssh.password = 'vagrant'
+  config.ssh.insert_key= false
+#  config.ssh.username = 'vagrant'
+#  config.ssh.password = 'vagrant'
   config.vm.provider "virtualbox" do |vb|
     vb.memory = "512"
   end
